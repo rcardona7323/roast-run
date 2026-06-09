@@ -1,0 +1,39 @@
+{
+  "name": "@runclub/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./routers": "./src/routers/index.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch --env-file=.env --ignore '../../node_modules/**' src/index.ts",
+    "build": "tsc --outDir dist --noEmit false",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@runclub/db": "workspace:*",
+    "@trpc/server": "^11.4.3",
+    "drizzle-orm": "catalog:",
+    "better-auth": "^1.2.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "nanoid": "^5.1.5",
+    "node-cron": "^4.1.0",
+    "pino": "^9.7.0",
+    "pino-http": "^10.5.0",
+    "resend": "^4.5.2",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.3",
+    "@types/node": "catalog:",
+    "@types/node-cron": "^3.0.11",
+    "tsx": "catalog:",
+    "typescript": "~5.9.3"
+  }
+}

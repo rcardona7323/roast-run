@@ -1,0 +1,1401 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Café Run Club Rewards API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: Auth
+    description: Browser authentication endpoints
+  - name: members
+    description: Member operations
+  - name: runs
+    description: Run logging operations
+  - name: rewardTiers
+    description: Reward tier management
+  - name: redemptions
+    description: Reward redemptions
+  - name: leaderboard
+    description: Club leaderboard
+  - name: strava
+    description: Strava integration
+  - name: clubEvents
+    description: Club scheduled run events
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/user:
+    get:
+      tags: [Auth]
+      operationId: getCurrentAuthUser
+      summary: Get the currently authenticated user
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '200':
+          description: Auth status resolved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserEnvelope'
+
+  /login:
+    get:
+      tags: [Auth]
+      operationId: beginBrowserLogin
+      summary: Start the browser OIDC login flow
+      parameters:
+        - name: returnTo
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to the OIDC authorization endpoint.
+
+  /callback:
+    get:
+      tags: [Auth]
+      operationId: handleBrowserLoginCallback
+      summary: Complete the browser OIDC login flow
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: iss
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uri
+      responses:
+        '302':
+          description: Redirect to the returnTo path on success.
+
+  /logout:
+    get:
+      tags: [Auth]
+      operationId: logoutBrowserSession
+      summary: Clear the session and begin OIDC logout
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '302':
+          description: Redirect to the OIDC provider logout URL.
+
+  /members/me:
+    get:
+      tags: [members]
+      operationId: getMyProfile
+      summary: Get my member profile
+      responses:
+        '200':
+          description: Member profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    patch:
+      tags: [members]
+      operationId: updateMyProfile
+      summary: Update my display name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberUpdate'
+      responses:
+        '200':
+          description: Updated member profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /members/me/dependents:
+    get:
+      tags: [members]
+      operationId: listMyDependents
+      summary: List my dependent profiles (kids, etc.)
+      responses:
+        '200':
+          description: List of dependents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    post:
+      tags: [members]
+      operationId: addDependent
+      summary: Add a dependent profile under my account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DependentInput'
+      responses:
+        '201':
+          description: Created dependent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /members/me/dependents/{dependentId}/redemptions:
+    get:
+      tags: [redemptions]
+      operationId: listDependentRedemptions
+      summary: List redemptions for a dependent
+      parameters:
+        - name: dependentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of redemptions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Redemption'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /members/me/dependents/{dependentId}:
+    delete:
+      tags: [members]
+      operationId: removeDependent
+      summary: Remove a dependent profile
+      parameters:
+        - name: dependentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Dependent removed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteSuccess'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /members:
+    get:
+      tags: [members]
+      operationId: listMembers
+      summary: List all members (admin only)
+      responses:
+        '200':
+          description: List of members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /runs:
+    get:
+      tags: [runs]
+      operationId: listMyRuns
+      summary: List my runs
+      responses:
+        '200':
+          description: List of runs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Run'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    post:
+      tags: [runs]
+      operationId: logRun
+      summary: Log a new run
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunInput'
+      responses:
+        '201':
+          description: Run logged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /runs/{runId}:
+    delete:
+      tags: [runs]
+      operationId: deleteRun
+      summary: Delete a run
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Run deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteSuccess'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /reward-tiers:
+    get:
+      tags: [rewardTiers]
+      operationId: listRewardTiers
+      summary: List all reward tiers
+      responses:
+        '200':
+          description: List of reward tiers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RewardTier'
+    post:
+      tags: [rewardTiers]
+      operationId: createRewardTier
+      summary: Create a reward tier (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RewardTierInput'
+      responses:
+        '201':
+          description: Created reward tier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RewardTier'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /reward-tiers/{tierId}:
+    patch:
+      tags: [rewardTiers]
+      operationId: updateRewardTier
+      summary: Update a reward tier (admin only)
+      parameters:
+        - name: tierId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RewardTierUpdate'
+      responses:
+        '200':
+          description: Updated reward tier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RewardTier'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    delete:
+      tags: [rewardTiers]
+      operationId: deleteRewardTier
+      summary: Delete a reward tier (admin only)
+      parameters:
+        - name: tierId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteSuccess'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /redemptions:
+    get:
+      tags: [redemptions]
+      operationId: listMyRedemptions
+      summary: List my redemptions
+      responses:
+        '200':
+          description: List of redemptions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Redemption'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    post:
+      tags: [redemptions]
+      operationId: requestRedemption
+      summary: Request a reward redemption
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedemptionInput'
+      responses:
+        '201':
+          description: Redemption requested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Redemption'
+        '400':
+          description: Not enough miles or already redeemed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /redemptions/all:
+    get:
+      tags: [redemptions]
+      operationId: listAllRedemptions
+      summary: List all redemptions (admin only)
+      responses:
+        '200':
+          description: All redemptions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RedemptionWithMember'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /redemptions/{redemptionId}:
+    patch:
+      tags: [redemptions]
+      operationId: updateRedemptionStatus
+      summary: Approve or reject a redemption (admin only)
+      parameters:
+        - name: redemptionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RedemptionStatusUpdate'
+      responses:
+        '200':
+          description: Updated redemption
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Redemption'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /leaderboard:
+    get:
+      tags: [leaderboard]
+      operationId: getLeaderboard
+      summary: Get the club leaderboard
+      parameters:
+        - name: period
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [alltime, thismonth, thisweek]
+      responses:
+        '200':
+          description: Leaderboard entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaderboardEntry'
+
+  /admin/members/{userId}:
+    get:
+      tags: [members]
+      operationId: getAdminMemberDetail
+      summary: Get full member detail (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Member detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberDetail'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Member not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    patch:
+      tags: [members]
+      operationId: adminUpdateMember
+      summary: Update a member's profile (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberUpdate'
+      responses:
+        '200':
+          description: Updated member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /strava/status:
+    get:
+      tags: [strava]
+      operationId: getStravaStatus
+      summary: Get Strava connection status
+      responses:
+        '200':
+          description: Strava connection status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StravaStatus'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /strava/disconnect:
+    post:
+      tags: [strava]
+      operationId: disconnectStrava
+      summary: Disconnect Strava account
+      responses:
+        '200':
+          description: Disconnected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteSuccess'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /strava/webhook:
+    get:
+      tags: [strava]
+      operationId: verifyStravaWebhook
+      summary: Verify Strava webhook subscription (hub.challenge)
+      parameters:
+        - name: hub.mode
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: hub.challenge
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: hub.verify_token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Challenge echoed back to Strava
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StravaWebhookChallenge'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Verify token mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    post:
+      tags: [strava]
+      operationId: handleStravaWebhookEvent
+      summary: Receive Strava webhook activity events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StravaWebhookEvent'
+      responses:
+        '200':
+          description: Event acknowledged
+
+  /strava/sync:
+    post:
+      tags: [strava]
+      operationId: syncStrava
+      summary: Sync runs from Strava
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StravaSyncInput'
+      responses:
+        '200':
+          description: Sync result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StravaSyncResult'
+        '400':
+          description: Strava not connected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '502':
+          description: Strava API error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /dashboard/summary:
+    get:
+      tags: [members]
+      operationId: getDashboardSummary
+      summary: Get dashboard summary for the current member
+      responses:
+        '200':
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummary'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /club-events:
+    get:
+      tags: [clubEvents]
+      operationId: listClubEvents
+      summary: List all club run events
+      responses:
+        '200':
+          description: List of club events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClubEvent'
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    post:
+      tags: [clubEvents]
+      operationId: createClubEvent
+      summary: Create a club run event (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClubEventInput'
+      responses:
+        '201':
+          description: Created event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClubEvent'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /club-events/{eventId}:
+    patch:
+      tags: [clubEvents]
+      operationId: updateClubEvent
+      summary: Update a club run event (admin only)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClubEventInput'
+      responses:
+        '200':
+          description: Updated event
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClubEvent'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+    delete:
+      tags: [clubEvents]
+      operationId: deleteClubEvent
+      summary: Delete a club run event (admin only)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteSuccess'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+components:
+  parameters:
+    AuthorizationSessionHeader:
+      name: Authorization
+      in: header
+      required: false
+      description: Opaque session token — Bearer <sid>.
+      schema:
+        type: string
+    SessionCookie:
+      name: sid
+      in: cookie
+      required: false
+      description: Browser session cookie.
+      schema:
+        type: string
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    AuthUser:
+      type: object
+      required: [id, email, firstName, lastName, profileImageUrl]
+      properties:
+        id:
+          type: string
+        email:
+          type: ["string", "null"]
+          format: email
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        profileImageUrl:
+          type: ["string", "null"]
+
+    AuthUserEnvelope:
+      type: object
+      required: [user]
+      properties:
+        user:
+          oneOf:
+            - $ref: '#/components/schemas/AuthUser'
+            - type: 'null'
+
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    DeleteSuccess:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+
+    Member:
+      type: object
+      required: [id, userId, displayName, totalMiles, joinedAt, isAdmin]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        emergencyContact:
+          type: ["string", "null"]
+        emergencyPhone:
+          type: ["string", "null"]
+        profileImageUrl:
+          type: ["string", "null"]
+        totalMiles:
+          type: number
+        joinedAt:
+          type: string
+          format: date-time
+        isAdmin:
+          type: boolean
+        parentMemberId:
+          type: ["integer", "null"]
+
+    DependentInput:
+      type: object
+      required: [displayName]
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+
+    MemberUpdate:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        emergencyContact:
+          type: ["string", "null"]
+        emergencyPhone:
+          type: ["string", "null"]
+
+    Run:
+      type: object
+      required: [id, userId, distanceMiles, date, createdAt, source]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        distanceMiles:
+          type: number
+        date:
+          type: string
+          format: date
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        source:
+          type: string
+          enum: [manual, strava]
+          default: manual
+        stravaActivityId:
+          type: ["string", "null"]
+        clubEventId:
+          type: ["integer", "null"]
+
+    ClubEvent:
+      type: object
+      required: [id, name, date, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        date:
+          type: string
+          format: date
+        description:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    ClubEventInput:
+      type: object
+      required: [name, date]
+      properties:
+        name:
+          type: string
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+
+    StravaStatus:
+      type: object
+      required: [connected]
+      properties:
+        connected:
+          type: boolean
+        athleteId:
+          type: ["string", "null"]
+        athleteName:
+          type: ["string", "null"]
+
+    StravaSyncResult:
+      type: object
+      required: [imported]
+      properties:
+        imported:
+          type: integer
+
+    StravaSyncInput:
+      type: object
+      properties:
+        afterDate:
+          type: string
+          format: date
+          description: Only import activities after this date (YYYY-MM-DD)
+
+    StravaWebhookChallenge:
+      type: object
+      required: ["hub.challenge"]
+      properties:
+        hub.challenge:
+          type: string
+
+    StravaWebhookEvent:
+      type: object
+      properties:
+        object_type:
+          type: string
+          description: Type of object (e.g. "activity")
+        aspect_type:
+          type: string
+          description: Type of change (e.g. "create", "update", "delete")
+        object_id:
+          type: integer
+          description: The activity or athlete ID
+        owner_id:
+          type: integer
+          description: The Strava athlete ID who owns the object
+        subscription_id:
+          type: integer
+        event_time:
+          type: integer
+          description: Unix timestamp of the event
+
+    RunInput:
+      type: object
+      required: [distanceMiles, date]
+      properties:
+        distanceMiles:
+          type: number
+          minimum: 0.01
+        date:
+          type: string
+          format: date
+        notes:
+          type: string
+        forUserId:
+          type: string
+          description: Optional userId of a dependent to log the run for
+
+    RewardTier:
+      type: object
+      required: [id, name, description, milesRequired, rewardType, active]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        milesRequired:
+          type: number
+        rewardType:
+          type: string
+          enum: [coffee, smoothie, apparel, custom]
+        active:
+          type: boolean
+
+    RewardTierInput:
+      type: object
+      required: [name, description, milesRequired, rewardType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        milesRequired:
+          type: number
+          minimum: 0.1
+        rewardType:
+          type: string
+          enum: [coffee, smoothie, apparel, custom]
+        active:
+          type: boolean
+
+    RewardTierUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        milesRequired:
+          type: number
+          minimum: 0.1
+        rewardType:
+          type: string
+          enum: [coffee, smoothie, apparel, custom]
+        active:
+          type: boolean
+
+    Redemption:
+      type: object
+      required: [id, userId, rewardTierId, status, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        rewardTierId:
+          type: integer
+        rewardTierName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        adminNotes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RedemptionWithMember:
+      type: object
+      required: [id, userId, rewardTierId, status, createdAt, memberDisplayName]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        rewardTierId:
+          type: integer
+        rewardTierName:
+          type: ["string", "null"]
+        memberDisplayName:
+          type: string
+        memberEmail:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        adminNotes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RedemptionInput:
+      type: object
+      required: [rewardTierId]
+      properties:
+        rewardTierId:
+          type: integer
+        forUserId:
+          type: string
+          description: Optional userId of a dependent to request the redemption for
+
+    RedemptionStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected]
+        adminNotes:
+          type: string
+
+    LeaderboardEntry:
+      type: object
+      required: [rank, displayName, totalMiles, runCount]
+      properties:
+        rank:
+          type: integer
+        userId:
+          type: string
+        displayName:
+          type: string
+        profileImageUrl:
+          type: ["string", "null"]
+        totalMiles:
+          type: number
+        runCount:
+          type: integer
+
+    MemberDetail:
+      type: object
+      required: [member, runs, earnedTiers]
+      properties:
+        member:
+          $ref: '#/components/schemas/Member'
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Run'
+        earnedTiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/RewardTier'
+        nextTier:
+          oneOf:
+            - $ref: '#/components/schemas/RewardTier'
+            - type: 'null'
+        milesUntilNext:
+          type: ["number", "null"]
+
+    DashboardSummary:
+      type: object
+      required: [totalMiles, runCount, nextRewardTier, earnedTiers, recentRuns, pendingRedemptions]
+      properties:
+        totalMiles:
+          type: number
+        runCount:
+          type: integer
+        milesThisMonth:
+          type: number
+        milesThisWeek:
+          type: number
+        nextRewardTier:
+          oneOf:
+            - $ref: '#/components/schemas/RewardTier'
+            - type: 'null'
+        milesUntilNextReward:
+          type: ["number", "null"]
+        earnedTiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/RewardTier'
+        recentRuns:
+          type: array
+          items:
+            $ref: '#/components/schemas/Run'
+        pendingRedemptions:
+          type: integer
