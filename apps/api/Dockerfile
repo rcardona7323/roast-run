@@ -1,6 +1,5 @@
-FROM node:20-alpine
+FROM node:22-alpine
 
-# Install pnpm directly via npm (more reliable than corepack in Docker)
 RUN npm install -g pnpm@9
 
 WORKDIR /app
