@@ -4,7 +4,7 @@ export default function LandingPage() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
       {/* Nav */}
-      <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "24px 48px", borderBottom: "1px solid var(--border)" }}>
+      <header className="landing-nav" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "24px 48px", borderBottom: "1px solid var(--border)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--primary-tint)", display: "grid", placeItems: "center", color: "var(--primary)" }}>
             <CupIcon />
@@ -20,7 +20,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "80px 24px 60px" }}>
+      <main className="landing-hero" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "80px 24px 60px" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "7px 16px", borderRadius: 999, background: "var(--primary-tint)", color: "var(--primary)", fontSize: 13, fontWeight: 700, marginBottom: 28, letterSpacing: ".02em" }}>
           <RunIcon /> Built for café run clubs
         </div>
@@ -43,7 +43,7 @@ export default function LandingPage() {
         </div>
 
         {/* Stats strip */}
-        <div style={{ display: "flex", gap: 48, marginTop: 64, padding: "24px 40px", background: "var(--card)", borderRadius: "var(--radius)", border: "1px solid var(--border)", boxShadow: "var(--shadow)" }}>
+        <div className="landing-stats" style={{ display: "flex", gap: 48, marginTop: 64, padding: "24px 40px", background: "var(--card)", borderRadius: "var(--radius)", border: "1px solid var(--border)", boxShadow: "var(--shadow)" }}>
           {[
             { value: "Log runs", label: "manually or via Strava" },
             { value: "Earn rewards", label: "at every milestone" },
@@ -58,8 +58,8 @@ export default function LandingPage() {
       </main>
 
       {/* Features */}
-      <section style={{ padding: "0 48px 80px", maxWidth: 960, margin: "0 auto", width: "100%" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
+      <section className="landing-features-wrap" style={{ padding: "0 48px 80px", maxWidth: 960, margin: "0 auto", width: "100%" }}>
+        <div className="landing-features" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
           {[
             {
               icon: <RunIcon size={28} />,

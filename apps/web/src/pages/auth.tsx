@@ -37,11 +37,11 @@ export default function AuthPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
-      {/* Left panel */}
-      <div style={{
+    <div className="auth-layout" style={{ background: "var(--bg)" }}>
+      {/* Left panel — hidden on mobile */}
+      <div className="auth-hero" style={{
         background: "linear-gradient(160deg, #C8611A 0%, #8C3D0A 100%)",
-        display: "flex", flexDirection: "column", justifyContent: "space-between",
+        flexDirection: "column", justifyContent: "space-between",
         padding: "36px 48px", position: "relative", overflow: "hidden",
       }}>
         {/* Decorative circles */}
