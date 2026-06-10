@@ -1,0 +1,35 @@
+{
+  "name": "runclub-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "build": "echo 'No build step needed — running with tsx'"
+  },
+  "dependencies": {
+    "@trpc/server": "^11.4.3",
+    "better-auth": "^1.2.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "drizzle-orm": "0.45.2",
+    "drizzle-zod": "^0.8.3",
+    "express": "^5.1.0",
+    "nanoid": "^5.1.5",
+    "node-cron": "^4.1.0",
+    "pg": "^8.20.0",
+    "pino": "^9.7.0",
+    "pino-http": "^10.5.0",
+    "resend": "^4.5.2",
+    "tsx": "4.21.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.3",
+    "@types/node": "^25.3.3",
+    "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.20.0",
+    "typescript": "~5.9.3"
+  }
+}
