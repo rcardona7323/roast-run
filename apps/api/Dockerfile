@@ -4,7 +4,7 @@ RUN npm install -g pnpm@9
 
 WORKDIR /app
 
-# Copy workspace config
+# Copy workspace config from repo root
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
 # Copy package.json files for workspace packages
@@ -19,9 +19,9 @@ COPY tsconfig.base.json tsconfig.json ./
 COPY packages/db ./packages/db
 COPY apps/api ./apps/api
 
-# Build
-RUN pnpm --filter @runclub/api run build
+# Build the API
+RUN cd apps/api && npx tsc --outDir dist --noEmit false
 
 EXPOSE 8080
 
-CMD ["node", "apps/api/dist/index.js"]
+CMD ["node", "/app/apps/api/dist/index.js"]
