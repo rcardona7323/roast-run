@@ -126,7 +126,7 @@ export async function handleWebhookEvent(event: {
   await db
     .insert(runsTable)
     .values({
-      userId: member.userId,
+      userId: member.userId!,
       organizationId: member.organizationId,
       distanceMiles,
       date,

@@ -27,7 +27,7 @@ async function sendDigests() {
       .from(runsTable)
       .where(
         and(
-          eq(runsTable.userId, member.userId),
+          eq(runsTable.userId, member.userId!),
           eq(runsTable.organizationId, member.organizationId),
           gte(runsTable.date, weekStr)
         )
