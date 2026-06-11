@@ -242,6 +242,11 @@ label.flabel { display: block; font-size: 14px; font-weight: 700; color: var(--i
 /* Two-column form row — collapses on mobile */
 .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
+/* Admin layout helpers */
+.section-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; }
+.admin-item-row { display: flex; align-items: center; gap: 16px; }
+.admin-item-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
 /* ─── Mobile Nav (bottom tab bar) ───────────────────────────────────── */
 .mobile-nav {
   display: none;
@@ -313,6 +318,12 @@ label.flabel { display: block; font-size: 14px; font-weight: 700; color: var(--i
   /* Modal footer: bigger tap targets */
   .modal-foot { padding: 14px 16px max(14px, env(safe-area-inset-bottom)); gap: 10px; }
   .modal-foot .btn-primary { flex: 1; padding: 14px 22px; font-size: 16px; }
+
+  /* Admin: headers stack, rows wrap, actions drop to their own line */
+  .section-head { flex-direction: column; align-items: stretch; }
+  .section-head .btn { width: 100%; }
+  .admin-item-row { flex-wrap: wrap; gap: 12px; }
+  .admin-item-actions { width: 100%; justify-content: flex-end; }
 
   /* Bottom nav bar */
   .mobile-nav {

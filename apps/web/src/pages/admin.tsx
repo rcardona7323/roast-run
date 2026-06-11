@@ -150,7 +150,7 @@ function RewardTiersSection() {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+      <div className="section-head">
         <div>
           <h2 style={{ fontSize: 17, fontWeight: 800 }}>Reward Tiers</h2>
           <p style={{ fontSize: 13.5, color: "var(--muted)", marginTop: 3 }}>
@@ -224,8 +224,8 @@ function RewardTiersSection() {
                   </form>
                 </div>
               ) : (
-                <div className="card" style={{
-                  padding: "18px 22px", display: "flex", alignItems: "center", gap: 18,
+                <div className="card admin-item-row" style={{
+                  padding: "18px 22px",
                   opacity: tier.active ? 1 : 0.55,
                 }}>
                   {/* Miles badge */}
@@ -240,8 +240,8 @@ function RewardTiersSection() {
                     <span style={{ fontSize: 11, color: "rgba(255,255,255,.8)", fontWeight: 600, letterSpacing: ".04em" }}>mi</span>
                   </div>
 
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                  <div style={{ flex: 1, minWidth: 180 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
                       <span style={{ fontWeight: 800, fontSize: 16 }}>{tier.name}</span>
                       <span style={{ fontSize: 13, padding: "3px 10px", borderRadius: 999,
                         background: "var(--primary-tint)", color: "var(--primary)", fontWeight: 600 }}>
@@ -257,7 +257,7 @@ function RewardTiersSection() {
                     <p style={{ fontSize: 13.5, color: "var(--ink-2)" }}>{tier.description}</p>
                   </div>
 
-                  <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                  <div className="admin-item-actions">
                     <button
                       className="btn btn-outline"
                       style={{ fontSize: 13, padding: "7px 14px" }}
@@ -377,17 +377,17 @@ function RedemptionsSection() {
               </h3>
               <div className="card" style={{ overflow: "hidden" }}>
                 {pending.map((r, i) => (
-                  <div key={r.id} style={{
-                    display: "flex", alignItems: "center", gap: 16, padding: "16px 20px",
+                  <div key={r.id} className="admin-item-row" style={{
+                    padding: "16px 20px",
                     borderBottom: i < pending.length - 1 ? "1px solid var(--border)" : "none",
                   }}>
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minWidth: 160 }}>
                       <div style={{ fontWeight: 700, fontSize: 15 }}>{memberName(r.userId)}</div>
                       <div style={{ fontSize: 13, color: "var(--muted)" }}>
                         {tierName(r.rewardTierId)} · {new Date(r.createdAt).toLocaleDateString("en", { month: "short", day: "numeric" })}
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: 8 }}>
+                    <div className="admin-item-actions">
                       <button
                         className="btn btn-primary"
                         style={{ fontSize: 13, padding: "8px 16px" }}
