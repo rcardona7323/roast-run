@@ -33,7 +33,11 @@ export default function AuthPage() {
   }
 
   async function handleGoogle() {
-    await signIn.social({ provider: "google", callbackURL: redirectTo });
+    try {
+      await signIn.social({ provider: "google", callbackURL: "/" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Google sign-in failed");
+    }
   }
 
   return (
