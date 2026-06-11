@@ -34,7 +34,7 @@ export default function AuthPage() {
 
   async function handleGoogle() {
     try {
-      await signIn.social({ provider: "google", callbackURL: "/" });
+      await signIn.social({ provider: "google", callbackURL: `${window.location.origin}/` });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google sign-in failed");
     }
