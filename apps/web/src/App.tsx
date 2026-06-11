@@ -12,6 +12,7 @@ import ProfilePage from "./pages/profile";
 import AdminPage from "./pages/admin";
 import LeaderboardPage from "./pages/leaderboard";
 import AuthPage from "./pages/auth";
+import ResetPasswordPage from "./pages/reset-password";
 import OnboardingPage from "./pages/onboarding";
 import JoinPage from "./pages/join";
 import NotFoundPage from "./pages/not-found";
@@ -69,6 +70,9 @@ function Router({ orgId, onSelectOrg }: { orgId: string; onSelectOrg: (id: strin
 
   // Join pages are always accessible (handle auth state internally)
   const path = window.location.pathname;
+  if (path === "/reset-password") {
+    return <ResetPasswordPage />;
+  }
   if (path.startsWith("/join/")) {
     const slug = path.replace("/join/", "");
     return (
