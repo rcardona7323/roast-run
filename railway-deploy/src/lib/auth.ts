@@ -13,10 +13,12 @@ export const auth = betterAuth({
     },
   }),
   secret: process.env.BETTER_AUTH_SECRET!,
-  baseURL: process.env.API_URL ?? "http://localhost:8080",
+  baseURL: process.env.APP_URL ?? "http://localhost:5173",
   trustedOrigins: [
     process.env.APP_URL ?? "http://localhost:5173",
     "https://roast-run-web.vercel.app",
+    process.env.API_URL ?? "http://localhost:8080",
+    "https://workspacerun-club-production.up.railway.app",
   ],
   emailAndPassword: {
     enabled: true,
@@ -25,7 +27,6 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-      redirectURI: `${process.env.APP_URL ?? "http://localhost:5173"}/api/auth/callback/google`,
     },
   },
 });
