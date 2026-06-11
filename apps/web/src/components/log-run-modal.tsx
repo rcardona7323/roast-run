@@ -89,7 +89,7 @@ export default function LogRunModal({ onClose, onSaved }: Props) {
           )}
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div className="form-row-2">
               <div>
                 <label className="flabel">Date</label>
                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required className="field" />

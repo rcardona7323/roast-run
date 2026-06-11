@@ -239,6 +239,9 @@ label.flabel { display: block; font-size: 14px; font-weight: 700; color: var(--i
 .screen { animation: fadeUp .3s cubic-bezier(.2,.7,.3,1); }
 @keyframes pop { from { opacity: 0; transform: scale(.96) translateY(8px); } to { opacity: 1; transform: none; } }
 
+/* Two-column form row — collapses on mobile */
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
 /* ─── Mobile Nav (bottom tab bar) ───────────────────────────────────── */
 .mobile-nav {
   display: none;
@@ -295,6 +298,21 @@ label.flabel { display: block; font-size: 14px; font-weight: 700; color: var(--i
   /* Modal: full-width, bottom sheet feel */
   .overlay { padding: 16px 12px; align-items: end; }
   .modal { max-width: 100%; border-radius: var(--radius) var(--radius) 0 0; }
+
+  /* Forms: stack two-column rows, 16px font stops iOS zoom-on-focus */
+  .form-row-2 { grid-template-columns: 1fr; gap: 14px; }
+  .field { font-size: 16px; padding: 13px 16px; }
+  input[type="date"].field {
+    width: 100%;
+    min-height: 50px;
+    text-align: left;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Modal footer: bigger tap targets */
+  .modal-foot { padding: 14px 16px max(14px, env(safe-area-inset-bottom)); gap: 10px; }
+  .modal-foot .btn-primary { flex: 1; padding: 14px 22px; font-size: 16px; }
 
   /* Bottom nav bar */
   .mobile-nav {
