@@ -13,7 +13,7 @@ export const auth = betterAuth({
     },
   }),
   secret: process.env.BETTER_AUTH_SECRET!,
-  baseURL: process.env.APP_URL ?? "http://localhost:5173",
+  baseURL: process.env.API_URL ?? "http://localhost:8080",
   trustedOrigins: [
     process.env.APP_URL ?? "http://localhost:5173",
     "https://roast-run-web.vercel.app",
