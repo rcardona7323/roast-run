@@ -458,7 +458,9 @@ function MembersSection() {
 
   if (isLoading) return <p style={{ color: "var(--muted)", fontSize: 14 }}>Loading…</p>;
 
-  const humans = (members ?? []).filter((m) => m.userId !== null);
+  const humans = [...(members ?? [])].sort((a, b) =>
+    (a.displayName ?? "").localeCompare(b.displayName ?? "")
+  );
 
   return (
     <div>
@@ -503,6 +505,17 @@ function MembersSection() {
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {m.parentMemberId !== null ? (
+                    <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 999,
+                      background: "var(--gold-tint)", color: "#9A7A07" }}>
+                      Dependent
+                    </span>
+                  ) : m.userId === null ? (
+                    <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 999,
+                      background: "#F1ECE4", color: "#7A7268" }}>
+                      No account
+                    </span>
+                  ) : null}
                   {m.isAdmin && (
                     <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 999,
                       background: "var(--primary-tint)", color: "var(--primary)" }}>
