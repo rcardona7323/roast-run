@@ -139,11 +139,9 @@ export default function RewardsPage() {
                   transition: "background .4s",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
+                <div className="reward-row">
                   {/* Icon tile */}
-                  <div style={{
-                    width: 64, height: 64, borderRadius: 16, display: "flex", alignItems: "center",
-                    justifyContent: "center", fontSize: 28, flexShrink: 0,
+                  <div className="reward-icon" style={{
                     background: earned ? "var(--primary-tint)" : "var(--card-soft)",
                     border: `2px solid ${earned ? "var(--primary-tint)" : "var(--border-2)"}`,
                   }}>
@@ -151,7 +149,7 @@ export default function RewardsPage() {
                   </div>
 
                   {/* Content */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="reward-content">
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 17, fontWeight: 800 }}>{tier.name}</span>
                       <span style={{ fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 999,
@@ -188,7 +186,7 @@ export default function RewardsPage() {
                   </div>
 
                   {/* Action */}
-                  <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                  <div className="reward-action">
                     {approvedRedemption ? (
                       <span className="badge badge-approved" style={{ fontSize: 13, padding: "6px 14px" }}>✓ Approved</span>
                     ) : pendingRedemption ? (

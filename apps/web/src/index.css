@@ -247,6 +247,15 @@ label.flabel { display: block; font-size: 14px; font-weight: 700; color: var(--i
 .admin-item-row { display: flex; align-items: center; gap: 16px; }
 .admin-item-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
+/* Reward tier cards */
+.reward-row { display: flex; align-items: flex-start; gap: 20px; }
+.reward-icon {
+  width: 64px; height: 64px; border-radius: 16px; font-size: 28px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.reward-content { flex: 1; min-width: 0; }
+.reward-action { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+
 /* ─── Mobile Nav (bottom tab bar) ───────────────────────────────────── */
 .mobile-nav {
   display: none;
@@ -324,6 +333,13 @@ label.flabel { display: block; font-size: 14px; font-weight: 700; color: var(--i
   .section-head .btn { width: 100%; }
   .admin-item-row { flex-wrap: wrap; gap: 12px; }
   .admin-item-actions { width: 100%; justify-content: flex-end; }
+
+  /* Rewards: smaller icon, text gets the row, action drops below full-width */
+  .reward-row { flex-wrap: wrap; gap: 14px; }
+  .reward-icon { width: 48px; height: 48px; font-size: 22px; border-radius: 12px; }
+  .reward-content { min-width: 65%; }
+  .reward-action { width: 100%; flex-direction: row; align-items: center; }
+  .reward-action .btn { width: 100%; padding: 13px 22px; font-size: 15px; }
 
   /* Bottom nav bar */
   .mobile-nav {
