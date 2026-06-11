@@ -20,7 +20,7 @@ export const organizationsTable = pgTable("organizations", {
   slug: text("slug").notNull().unique(),
   ownerId: text("owner_id")
     .notNull()
-    .references(() => usersTable.id, { onDelete: "cascade" }),
+    .references(() => usersTable.id, { onDelete: "restrict" }),
   settings: jsonb("settings").default({}),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
