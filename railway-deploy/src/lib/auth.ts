@@ -17,6 +17,7 @@ export const auth = betterAuth({
   baseURL: process.env.APP_URL ?? "http://localhost:5173",
   trustedOrigins: [
     process.env.APP_URL ?? "http://localhost:5173",
+    "https://runclub.solbowlsnc.com",
     "https://roast-run-web.vercel.app",
     process.env.API_URL ?? "http://localhost:8080",
     "https://workspacerun-club-production.up.railway.app",

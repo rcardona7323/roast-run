@@ -15,7 +15,11 @@ export const auth = betterAuth({
   }),
   secret: process.env.BETTER_AUTH_SECRET!,
   baseURL: process.env.APP_URL ?? "http://localhost:8080",
-  trustedOrigins: [process.env.APP_URL ?? "http://localhost:5173"],
+  trustedOrigins: [
+    process.env.APP_URL ?? "http://localhost:5173",
+    "https://runclub.solbowlsnc.com",
+    "https://roast-run-web.vercel.app",
+  ],
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({ user, url }) => {
