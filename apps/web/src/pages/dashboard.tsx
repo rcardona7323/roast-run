@@ -18,7 +18,7 @@ export default function DashboardPage() {
 
   if (!data) return null;
 
-  const { member, recentRuns, earnedTiers, nextTier, weekMiles } = data;
+  const { member, recentRuns, earnedTiers, nextTier, weekMiles, streakWeeks } = data;
   const totalMiles = member.totalMiles;
   const goal = nextTier?.milesRequired ?? totalMiles;
   const pct = nextTier ? Math.min(100, (totalMiles / nextTier.milesRequired) * 100) : 100;
@@ -60,6 +60,23 @@ export default function DashboardPage() {
         <StatCard icon={<FlameIcon />} label="This Week" foot="miles logged this week">
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 46, lineHeight: 0.9 }}>
             {weekMiles.toFixed(1)} <span style={{ fontSize: 22, color: "var(--muted)", fontWeight: 700 }}>mi</span>
+          </div>
+        </StatCard>
+
+        <StatCard
+          icon={<FlameIcon />}
+          label="Week Streak"
+          foot={
+            streakWeeks === 0
+              ? "log a run to start a streak"
+              : streakWeeks === 1
+              ? "keep it going next week!"
+              : "consecutive weeks running"
+          }
+        >
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 46, lineHeight: 0.9 }}>
+            {streakWeeks > 0 && "🔥"}{streakWeeks}
+            <span style={{ fontSize: 22, color: "var(--muted)", fontWeight: 700 }}> wk{streakWeeks !== 1 ? "s" : ""}</span>
           </div>
         </StatCard>
 
