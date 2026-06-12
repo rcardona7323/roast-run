@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "../lib/trpc";
+import Avatar from "../components/avatar";
 
 function InviteBanner() {
   const { data: org } = trpc.organizations.get.useQuery();
@@ -484,7 +485,6 @@ function MembersSection() {
       ) : (
         <div className="card" style={{ overflow: "hidden" }}>
           {humans.map((m, i) => {
-            const initials = (m.displayName ?? "?").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
             return (
               <div
                 key={m.id}
@@ -497,7 +497,7 @@ function MembersSection() {
                 onMouseEnter={(e) => (e.currentTarget.style.background = "var(--card-soft)")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
-                <div className="avatar-circle" style={{ width: 40, height: 40, fontSize: 14, flexShrink: 0 }}>{initials}</div>
+                <Avatar name={m.displayName} image={m.image} size={40} fontSize={14} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: 15 }}>{m.displayName}</div>
                   <div style={{ fontSize: 13, color: "var(--muted)" }}>
@@ -574,7 +574,6 @@ function MemberDetailModal({ memberId, onClose, onToggleAdmin }: {
   }
 
   const { member, dependents, recentRuns, stats, redemptions, tiers } = data;
-  const initials = (member.displayName ?? "?").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
   const totalMiles = member.totalMiles ?? 0;
 
   return (
@@ -589,7 +588,7 @@ function MemberDetailModal({ memberId, onClose, onToggleAdmin }: {
         {/* Header */}
         <div className="card" style={{ borderRadius: "var(--radius) var(--radius) 0 0", padding: "28px 28px 24px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 20 }}>
-            <div className="avatar-circle" style={{ width: 60, height: 60, fontSize: 20, flexShrink: 0 }}>{initials}</div>
+            <Avatar name={member.displayName} image={member.image} size={60} fontSize={20} />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 20, fontWeight: 900, fontFamily: "var(--font-display)" }}>{member.displayName}</div>
               <div style={{ fontSize: 13.5, color: "var(--muted)", marginTop: 2 }}>{member.email ?? "No email"}</div>

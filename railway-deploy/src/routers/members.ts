@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { router, protectedProcedure, adminProcedure } from "../lib/trpc.js";
-import { db, membersTable, runsTable, redemptionsTable, rewardTiersTable } from "../db/index.js";
+import { db, membersTable, runsTable, redemptionsTable, rewardTiersTable, usersTable } from "../db/index.js";
 import { eq, and, or, desc, count, sum, isNull, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
@@ -74,10 +74,15 @@ export const membersRouter = router({
     }),
 
   list: adminProcedure.query(async ({ ctx }) => {
-    return db
-      .select()
+    const rows = await db
+      .select({
+        member: membersTable,
+        image: sql<string | null>`COALESCE(${usersTable.image}, ${membersTable.profileImageUrl})`,
+      })
       .from(membersTable)
+      .leftJoin(usersTable, eq(usersTable.id, membersTable.userId))
       .where(eq(membersTable.organizationId, ctx.organizationId));
+    return rows.map((r) => ({ ...r.member, image: r.image }));
   }),
 
   update: protectedProcedure
@@ -215,7 +220,17 @@ export const membersRouter = router({
         .where(eq(rewardTiersTable.organizationId, ctx.organizationId))
         .orderBy(rewardTiersTable.milesRequired);
 
-      return { member, dependents, recentRuns, stats, redemptions, tiers };
+      let image = member.profileImageUrl;
+      if (member.userId) {
+        const [u] = await db
+          .select({ image: usersTable.image })
+          .from(usersTable)
+          .where(eq(usersTable.id, member.userId))
+          .limit(1);
+        image = u?.image ?? image;
+      }
+
+      return { member: { ...member, image }, dependents, recentRuns, stats, redemptions, tiers };
     }),
 
   setAdmin: adminProcedure

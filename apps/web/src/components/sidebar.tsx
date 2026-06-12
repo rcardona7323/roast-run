@@ -1,6 +1,7 @@
 import { useLocation, Link } from "wouter";
-import { signOut } from "../lib/auth";
+import { signOut, useSession } from "../lib/auth";
 import { trpc } from "../lib/trpc";
+import Avatar from "./avatar";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: ActivityIcon },
@@ -13,10 +14,7 @@ const navItems = [
 export default function Sidebar() {
   const [location] = useLocation();
   const { data: member } = trpc.members.me.useQuery();
-
-  const initials = member?.displayName
-    ? member.displayName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
-    : "?";
+  const { data: session } = useSession();
 
   return (
     <aside className="sidebar">
@@ -59,9 +57,7 @@ export default function Sidebar() {
       <div className="sidebar-foot">
         <div className="divider" />
         <div className="user-row">
-          <div className="avatar-circle" style={{ width: 42, height: 42, fontSize: 15 }}>
-            {initials}
-          </div>
+          <Avatar name={member?.displayName} image={session?.user.image} size={42} fontSize={15} />
           <div style={{ minWidth: 0 }}>
             <div className="user-name">{member?.displayName ?? "—"}</div>
             <div className="user-miles">{(member?.totalMiles ?? 0).toFixed(1)} miles</div>

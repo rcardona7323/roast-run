@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "../lib/trpc";
+import Avatar from "../components/avatar";
 
 type Period = "weekly" | "monthly" | "allTime";
 
@@ -75,9 +76,7 @@ export default function LeaderboardPage() {
                 </div>
 
                 {/* Avatar */}
-                <div className="avatar-circle" style={{ width: 40, height: 40, fontSize: 15, flexShrink: 0 }}>
-                  {entry.displayName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()}
-                </div>
+                <Avatar name={entry.displayName} image={entry.image} size={40} fontSize={15} />
 
                 {/* Name */}
                 <div style={{ flex: 1, minWidth: 0 }}>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { trpc } from "../lib/trpc";
 import { useSession, signOut } from "../lib/auth";
 import FamilySection from "../components/family-section";
+import Avatar from "../components/avatar";
 
 export default function ProfilePage() {
   const { data: session } = useSession();
@@ -49,7 +50,6 @@ export default function ProfilePage() {
     action.then(() => { setSaved(true); setTimeout(() => setSaved(false), 2000); });
   }
 
-  const initials = displayName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <div className="screen">
@@ -66,7 +66,7 @@ export default function ProfilePage() {
       <div style={{ maxWidth: 540 }}>
         {/* Avatar */}
         <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 32 }}>
-          <div className="avatar-circle" style={{ width: 64, height: 64, fontSize: 22 }}>{initials}</div>
+          <Avatar name={displayName} image={session?.user.image} size={64} fontSize={22} />
           <div>
             <div style={{ fontSize: 18, fontWeight: 700 }}>{displayName || "—"}</div>
             <div style={{ fontSize: 14, color: "var(--muted)" }}>{member?.totalMiles?.toFixed(1) ?? "0.0"} miles logged</div>
