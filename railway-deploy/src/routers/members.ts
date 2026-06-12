@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure, adminProcedure } from "../lib/trpc.js";
 import { db, membersTable, runsTable, redemptionsTable, rewardTiersTable } from "../db/index.js";
-import { eq, and, or, desc, count, sum, isNull } from "drizzle-orm";
+import { eq, and, or, desc, count, sum, isNull, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 export const membersRouter = router({
@@ -34,6 +34,32 @@ export const membersRouter = router({
         .limit(1);
 
       if (existing[0]) return existing[0];
+
+      // Claim an existing account-less member record with a matching email
+      // (admin-entered members keep their mileage history when they sign up)
+      const claimEmail = ctx.userEmail ?? input.email;
+      if (claimEmail) {
+        const [claimable] = await db
+          .select()
+          .from(membersTable)
+          .where(
+            and(
+              eq(membersTable.organizationId, ctx.organizationId),
+              isNull(membersTable.userId),
+              isNull(membersTable.parentMemberId),
+              sql`lower(${membersTable.email}) = ${claimEmail.toLowerCase()}`
+            )
+          )
+          .limit(1);
+        if (claimable) {
+          const [claimed] = await db
+            .update(membersTable)
+            .set({ userId: ctx.userId })
+            .where(eq(membersTable.id, claimable.id))
+            .returning();
+          return claimed;
+        }
+      }
 
       const [created] = await db
         .insert(membersTable)

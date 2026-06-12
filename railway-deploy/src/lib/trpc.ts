@@ -9,6 +9,7 @@ export type Context = {
   req: Request;
   res: Response;
   userId: string | null;
+  userEmail: string | null;
   organizationId: string | null;
 };
 
@@ -26,6 +27,7 @@ export async function createContext({
     req,
     res,
     userId: session?.user.id ?? null,
+    userEmail: session?.user.email ?? null,
     organizationId,
   };
 }
