@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { trpc } from "../lib/trpc";
-import { useSession } from "../lib/auth";
+import { useSession, signOut } from "../lib/auth";
 import FamilySection from "../components/family-section";
 
 export default function ProfilePage() {
@@ -173,6 +173,20 @@ export default function ProfilePage() {
             </a>
           </div>
         )}
+
+        {/* Sign out */}
+        <div style={{ marginTop: 28, paddingTop: 24, borderTop: "1px solid var(--border)" }}>
+          <button
+            className="btn btn-outline"
+            style={{ width: "100%", fontSize: 15, padding: "12px", color: "#B0492A" }}
+            onClick={() => signOut().then(() => { window.location.href = "/"; })}
+          >
+            Sign Out
+          </button>
+          <p style={{ fontSize: 12.5, color: "var(--muted-2)", textAlign: "center", marginTop: 10 }}>
+            Signed in as {session?.user.email}
+          </p>
+        </div>
       </div>
     </div>
   );
