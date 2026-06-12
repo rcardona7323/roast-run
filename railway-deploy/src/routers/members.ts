@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure, adminProcedure } from "../lib/trpc.js";
 import { db, membersTable, runsTable, redemptionsTable, rewardTiersTable } from "../db/index.js";
-import { eq, and, desc, count, sum } from "drizzle-orm";
+import { eq, and, or, desc, count, sum, isNull } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
 export const membersRouter = router({
@@ -153,22 +153,27 @@ export const membersRouter = router({
         .from(membersTable)
         .where(and(eq(membersTable.parentMemberId, member.id), eq(membersTable.organizationId, ctx.organizationId)));
 
+      // Runs belong to this member if tagged with their memberId, or (legacy
+      // migrated rows) carry their userId with no memberId.
+      const runOwnership = member.userId
+        ? or(
+            eq(runsTable.memberId, member.id),
+            and(eq(runsTable.userId, member.userId), isNull(runsTable.memberId))
+          )
+        : eq(runsTable.memberId, member.id);
+
       // Recent runs (last 10)
-      const recentRuns = member.userId
-        ? await db.select().from(runsTable)
-            .where(and(eq(runsTable.userId, member.userId), eq(runsTable.organizationId, ctx.organizationId)))
-            .orderBy(desc(runsTable.date))
-            .limit(10)
-        : [];
+      const recentRuns = await db.select().from(runsTable)
+        .where(and(runOwnership, eq(runsTable.organizationId, ctx.organizationId)))
+        .orderBy(desc(runsTable.date))
+        .limit(10);
 
       // Run stats
-      const [stats] = member.userId
-        ? await db.select({
-            totalRuns: count(runsTable.id),
-            totalMiles: sum(runsTable.distanceMiles),
-          }).from(runsTable)
-            .where(and(eq(runsTable.userId, member.userId), eq(runsTable.organizationId, ctx.organizationId)))
-        : [{ totalRuns: 0, totalMiles: 0 }];
+      const [stats] = await db.select({
+          totalRuns: count(runsTable.id),
+          totalMiles: sum(runsTable.distanceMiles),
+        }).from(runsTable)
+        .where(and(runOwnership, eq(runsTable.organizationId, ctx.organizationId)));
 
       // Redemptions with tier names
       const redemptions = member.userId

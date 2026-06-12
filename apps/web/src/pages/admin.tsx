@@ -544,7 +544,22 @@ function MemberDetailModal({ memberId, onClose, onToggleAdmin }: {
   onClose: () => void;
   onToggleAdmin: (id: number, isAdmin: boolean) => void;
 }) {
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.members.detail.useQuery({ memberId });
+
+  const [showLogRun, setShowLogRun] = useState(false);
+  const [runDate, setRunDate] = useState(new Date().toISOString().slice(0, 10));
+  const [runMiles, setRunMiles] = useState("");
+  const [runNotes, setRunNotes] = useState("");
+
+  const refresh = () => {
+    utils.members.detail.invalidate({ memberId });
+    utils.members.list.invalidate();
+  };
+  const adminCreateRun = trpc.runs.adminCreate.useMutation({
+    onSuccess: () => { refresh(); setShowLogRun(false); setRunMiles(""); setRunNotes(""); },
+  });
+  const adminDeleteRun = trpc.runs.adminDelete.useMutation({ onSuccess: refresh });
 
   if (isLoading || !data) {
     return (
@@ -708,6 +723,58 @@ function MemberDetailModal({ memberId, onClose, onToggleAdmin }: {
             </section>
           )}
 
+          {/* Log a run for this member */}
+          <section>
+            <SectionLabel>Log a Run for {member.displayName}</SectionLabel>
+            {showLogRun ? (
+              <div className="card" style={{ padding: "18px 20px", border: "2px solid var(--primary-tint)" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div className="form-row-2">
+                    <div>
+                      <label className="flabel">Date</label>
+                      <input type="date" value={runDate} onChange={(e) => setRunDate(e.target.value)} required className="field" />
+                    </div>
+                    <div>
+                      <label className="flabel">Distance (miles)</label>
+                      <input type="number" step="0.01" min="0.01" placeholder="3.10"
+                        value={runMiles} onChange={(e) => setRunMiles(e.target.value)} required className="field" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="flabel">Notes <span style={{ color: "var(--muted)", fontWeight: 500 }}>(optional)</span></label>
+                    <input type="text" placeholder="Added by admin" value={runNotes}
+                      onChange={(e) => setRunNotes(e.target.value)} className="field" />
+                  </div>
+                  {adminCreateRun.error && (
+                    <p style={{ fontSize: 13, color: "#B0492A" }}>{adminCreateRun.error.message}</p>
+                  )}
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button
+                      className="btn btn-primary"
+                      style={{ fontSize: 14 }}
+                      disabled={adminCreateRun.isPending || !runMiles}
+                      onClick={() => adminCreateRun.mutate({
+                        memberId: member.id,
+                        distanceMiles: parseFloat(runMiles),
+                        date: runDate,
+                        notes: runNotes || undefined,
+                      })}
+                    >
+                      {adminCreateRun.isPending ? "Saving…" : "Save Run"}
+                    </button>
+                    <button className="btn btn-ghost" style={{ fontSize: 14 }} onClick={() => setShowLogRun(false)}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button className="btn btn-outline" style={{ fontSize: 14, width: "100%" }} onClick={() => setShowLogRun(true)}>
+                + Log a Run
+              </button>
+            )}
+          </section>
+
           {/* Recent runs */}
           {recentRuns.length > 0 && (
             <section>
@@ -728,6 +795,20 @@ function MemberDetailModal({ memberId, onClose, onToggleAdmin }: {
                     <span className={`badge ${run.source === "strava" ? "badge-strava" : "badge-manual"}`} style={{ fontSize: 11 }}>
                       {run.source}
                     </span>
+                    <button
+                      title="Delete run"
+                      disabled={adminDeleteRun.isPending}
+                      onClick={() => {
+                        if (window.confirm(`Delete this ${run.distanceMiles.toFixed(2)} mi run? ${member.displayName}'s total will be reduced.`)) {
+                          adminDeleteRun.mutate({ id: run.id });
+                        }
+                      }}
+                      style={{ color: "var(--muted-2)", padding: 4, lineHeight: 0 }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = "#B0492A")}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted-2)")}
+                    >
+                      <XIcon />
+                    </button>
                   </div>
                 ))}
               </div>

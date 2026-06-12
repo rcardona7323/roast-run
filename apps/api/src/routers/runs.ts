@@ -168,4 +168,66 @@ export const runsRouter = router({
         .orderBy(desc(runsTable.date))
         .limit(input.limit);
     }),
+
+  // Admin: log a run on behalf of any member (e.g. login trouble, no account)
+  adminCreate: adminProcedure
+    .input(z.object({
+      memberId: z.number(),
+      distanceMiles: z.number().positive(),
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      notes: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const [member] = await db
+        .select()
+        .from(membersTable)
+        .where(and(eq(membersTable.id, input.memberId), eq(membersTable.organizationId, ctx.organizationId)))
+        .limit(1);
+      if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "Member not found" });
+
+      const [run] = await db
+        .insert(runsTable)
+        .values({
+          // runs.user_id is NOT NULL; for members without accounts the admin is the owner
+          userId: member.userId ?? ctx.userId,
+          memberId: member.id,
+          organizationId: ctx.organizationId,
+          distanceMiles: input.distanceMiles,
+          date: input.date,
+          notes: input.notes ?? null,
+          source: "manual",
+        })
+        .returning();
+
+      await updateMemberMiles(member.id, input.distanceMiles);
+      return run;
+    }),
+
+  // Admin: delete any run in the organization
+  adminDelete: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const [run] = await db
+        .select()
+        .from(runsTable)
+        .where(and(eq(runsTable.id, input.id), eq(runsTable.organizationId, ctx.organizationId)))
+        .limit(1);
+      if (!run) throw new TRPCError({ code: "NOT_FOUND" });
+
+      await db.delete(runsTable).where(eq(runsTable.id, input.id));
+
+      let targetMemberId = run.memberId;
+      if (targetMemberId === null) {
+        const [owner] = await db
+          .select({ id: membersTable.id })
+          .from(membersTable)
+          .where(and(eq(membersTable.userId, run.userId), eq(membersTable.organizationId, ctx.organizationId)))
+          .limit(1);
+        targetMemberId = owner?.id ?? null;
+      }
+      if (targetMemberId !== null) {
+        await updateMemberMiles(targetMemberId, -run.distanceMiles);
+      }
+      return { success: true };
+    }),
 });
