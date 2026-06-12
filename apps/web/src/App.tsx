@@ -13,6 +13,7 @@ import AdminPage from "./pages/admin";
 import LeaderboardPage from "./pages/leaderboard";
 import AuthPage from "./pages/auth";
 import ResetPasswordPage from "./pages/reset-password";
+import CheckinPage from "./pages/checkin";
 import OnboardingPage from "./pages/onboarding";
 import JoinPage from "./pages/join";
 import NotFoundPage from "./pages/not-found";
@@ -85,6 +86,11 @@ function Router({ orgId, onSelectOrg }: { orgId: string; onSelectOrg: (id: strin
   }
 
   if (!session) {
+    // Preserve the check-in destination through the login flow
+    if (path === "/checkin") {
+      window.location.href = "/auth?redirect=/checkin";
+      return null;
+    }
     return (
       <Switch>
         <Route path="/" component={LandingPage} />
@@ -117,6 +123,7 @@ function Router({ orgId, onSelectOrg }: { orgId: string; onSelectOrg: (id: strin
           <Route path="/rewards" component={RewardsPage} />
           <Route path="/profile" component={ProfilePage} />
           <Route path="/leaderboard" component={LeaderboardPage} />
+          <Route path="/checkin" component={CheckinPage} />
           <Route path="/admin" component={AdminPage} />
           <Route path="/join/:slug">
             {() => <JoinPage onSelectOrg={onSelectOrg} />}

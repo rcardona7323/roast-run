@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { router, protectedProcedure, adminProcedure } from "../lib/trpc.js";
-import { db, runsTable, membersTable } from "@runclub/db";
+import { db, runsTable, membersTable, checkInsTable } from "@runclub/db";
 import { eq, and, or, desc, isNull } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 
@@ -106,6 +106,20 @@ export const runsRouter = router({
         const dep = await getDependent(input.forMemberId, me.id, ctx.organizationId);
         if (!dep) throw new TRPCError({ code: "FORBIDDEN", message: "Not your dependent" });
         targetMember = dep;
+      }
+
+      // Miles only count when you were at run club: require a check-in
+      // (by the logged-in member — covers their dependents too) for that date.
+      const [checkIn] = await db
+        .select({ id: checkInsTable.id })
+        .from(checkInsTable)
+        .where(and(eq(checkInsTable.memberId, me.id), eq(checkInsTable.date, input.date)))
+        .limit(1);
+      if (!checkIn) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only log miles for days you checked in at run club. Scan the check-in QR when you arrive!",
+        });
       }
 
       const [run] = await db

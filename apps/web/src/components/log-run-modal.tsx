@@ -15,6 +15,7 @@ export default function LogRunModal({ onClose, onSaved }: Props) {
 
   const { data: me } = trpc.members.me.useQuery();
   const { data: dependents } = trpc.members.dependents.useQuery();
+  const { data: checkin } = trpc.checkins.status.useQuery();
 
   const createRun = trpc.runs.create.useMutation({
     onSuccess: onSaved,
@@ -44,6 +45,20 @@ export default function LogRunModal({ onClose, onSaved }: Props) {
         <button className="modal-x" onClick={onClose}><XIcon /></button>
         <div className="card" style={{ borderRadius: "var(--radius) var(--radius) 0 0", padding: "28px 26px 24px" }}>
           <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>Log a Run</h2>
+
+          {checkin && (
+            checkin.checkedInToday ? (
+              <div style={{ margin: "10px 0 16px", padding: "10px 14px", borderRadius: 10,
+                background: "#ECEFE9", border: "1px solid #C5D4BC", fontSize: 13.5, color: "var(--green)", fontWeight: 600 }}>
+                ✅ Checked in at run club today
+              </div>
+            ) : (
+              <div style={{ margin: "10px 0 16px", padding: "10px 14px", borderRadius: 10,
+                background: "var(--gold-tint)", border: "1px solid #F0D898", fontSize: 13.5, color: "#9A7A07", fontWeight: 600 }}>
+                Miles only count on days you check in at run club — scan the QR when you arrive.
+              </div>
+            )
+          )}
 
           {/* Who is this run for? */}
           {hasDependents && (

@@ -48,7 +48,7 @@ function InviteBanner() {
   );
 }
 
-type Tab = "tiers" | "redemptions" | "members" | "email";
+type Tab = "tiers" | "redemptions" | "members" | "checkin" | "email";
 
 const REWARD_TYPES = [
   { value: "coffee", label: "☕ Coffee" },
@@ -86,6 +86,9 @@ export default function AdminPage() {
         <button className={`seg${tab === "members" ? " on" : ""}`} onClick={() => setTab("members")}>
           Members
         </button>
+        <button className={`seg${tab === "checkin" ? " on" : ""}`} onClick={() => setTab("checkin")}>
+          ✅ Check-In
+        </button>
         <button className={`seg${tab === "email" ? " on" : ""}`} onClick={() => setTab("email")}>
           ✉️ Email
         </button>
@@ -94,6 +97,7 @@ export default function AdminPage() {
       {tab === "tiers" && <RewardTiersSection />}
       {tab === "redemptions" && <RedemptionsSection />}
       {tab === "members" && <MembersSection />}
+      {tab === "checkin" && <CheckinSection />}
       {tab === "email" && <EmailSection />}
     </div>
   );
@@ -560,6 +564,9 @@ function MemberDetailModal({ memberId, onClose, onToggleAdmin }: {
     onSuccess: () => { refresh(); setShowLogRun(false); setRunMiles(""); setRunNotes(""); },
   });
   const adminDeleteRun = trpc.runs.adminDelete.useMutation({ onSuccess: refresh });
+  const adminCheckIn = trpc.checkins.adminCheckIn.useMutation({
+    onSuccess: () => utils.checkins.todayList.invalidate(),
+  });
 
   if (isLoading || !data) {
     return (
@@ -815,7 +822,15 @@ function MemberDetailModal({ memberId, onClose, onToggleAdmin }: {
           )}
 
           {/* Admin actions */}
-          <div style={{ display: "flex", gap: 10, paddingTop: 4 }}>
+          <div style={{ display: "flex", gap: 10, paddingTop: 4, flexWrap: "wrap" }}>
+            <button
+              className="btn btn-outline"
+              style={{ fontSize: 13.5 }}
+              disabled={adminCheckIn.isPending}
+              onClick={() => adminCheckIn.mutate({ memberId: member.id })}
+            >
+              {adminCheckIn.isSuccess ? "✅ Checked In" : adminCheckIn.isPending ? "Checking in…" : "Check In Today"}
+            </button>
             <button
               className="btn btn-ghost"
               style={{ fontSize: 13.5, color: member.isAdmin ? "#B0492A" : "var(--ink-2)" }}
@@ -844,6 +859,176 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
       <span style={{ fontSize: 13.5, color: "var(--muted)", fontWeight: 600 }}>{label}</span>
       <span style={{ fontSize: 14, fontWeight: 600, color: "var(--ink)" }}>{value}</span>
+    </div>
+  );
+}
+
+/* ─── Check-In ───────────────────────────────────────────────────────── */
+
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function CheckinSection() {
+  const utils = trpc.useUtils();
+  const { data: status } = trpc.checkins.status.useQuery();
+  const { data: todayList } = trpc.checkins.todayList.useQuery();
+  const updateSettings = trpc.checkins.updateSettings.useMutation({
+    onSuccess: () => { utils.checkins.status.invalidate(); setEditing(false); },
+  });
+
+  const [editing, setEditing] = useState(false);
+  const [days, setDays] = useState<number[]>([]);
+  const [startHour, setStartHour] = useState(6);
+  const [endHour, setEndHour] = useState(9);
+
+  const checkinUrl = `${window.location.origin}/checkin`;
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=480x480&data=${encodeURIComponent(checkinUrl)}`;
+
+  const s = status?.settings;
+  const hourLabel = (h: number) => {
+    const ampm = h < 12 ? "am" : "pm";
+    const display = h % 12 === 0 ? 12 : h % 12;
+    return `${display}${ampm}`;
+  };
+
+  function startEdit() {
+    if (!s) return;
+    setDays(s.days);
+    setStartHour(s.startHour);
+    setEndHour(s.endHour);
+    setEditing(true);
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      <div>
+        <h2 style={{ fontSize: 17, fontWeight: 800, marginBottom: 6 }}>Run Club Check-In</h2>
+        <p style={{ fontSize: 13.5, color: "var(--muted)" }}>
+          Print this QR code and post it at run club. Members scan it to check in —
+          they can only log miles for days they've checked in. The code only works
+          during your check-in window, so it stays valid week after week.
+        </p>
+      </div>
+
+      {/* QR code */}
+      <div className="card" style={{ padding: "28px 24px", textAlign: "center" }}>
+        <img src={qrSrc} alt="Check-in QR code" style={{ width: 240, height: 240, maxWidth: "100%" }} />
+        <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 14, fontFamily: "monospace" }}>{checkinUrl}</div>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 16, flexWrap: "wrap" }}>
+          <a href={qrSrc} download="runclub-checkin-qr.png" className="btn btn-outline" style={{ fontSize: 13.5 }}>
+            ⬇️ Download QR
+          </a>
+          <button className="btn btn-outline" style={{ fontSize: 13.5 }}
+            onClick={() => { navigator.clipboard.writeText(checkinUrl); }}>
+            Copy Link
+          </button>
+        </div>
+      </div>
+
+      {/* Window settings */}
+      <div className="card" style={{ padding: "20px 22px" }}>
+        <div className="section-head" style={{ marginBottom: editing ? 16 : 0 }}>
+          <div>
+            <h3 style={{ fontSize: 15, fontWeight: 800 }}>Check-In Window</h3>
+            {s && !editing && (
+              <p style={{ fontSize: 13.5, color: "var(--muted)", marginTop: 4 }}>
+                {s.days.map((d) => DAY_NAMES[d]).join(", ")} · {hourLabel(s.startHour)}–{hourLabel(s.endHour)} ({s.timezone})
+                {status && (
+                  <span style={{ marginLeft: 8, fontWeight: 700, color: status.open ? "var(--green)" : "var(--muted-2)" }}>
+                    {status.open ? "● OPEN NOW" : "○ closed"}
+                  </span>
+                )}
+              </p>
+            )}
+          </div>
+          {!editing && (
+            <button className="btn btn-outline" style={{ fontSize: 13.5 }} onClick={startEdit}>Edit</button>
+          )}
+        </div>
+
+        {editing && s && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <label className="flabel">Days</label>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {DAY_NAMES.map((name, i) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => setDays(days.includes(i) ? days.filter((d) => d !== i) : [...days, i])}
+                    style={{
+                      padding: "8px 14px", borderRadius: 999, fontSize: 13.5, fontWeight: 600, cursor: "pointer",
+                      background: days.includes(i) ? "var(--primary)" : "var(--card-soft)",
+                      color: days.includes(i) ? "#fff" : "var(--ink-2)",
+                      border: `1px solid ${days.includes(i) ? "transparent" : "var(--border-2)"}`,
+                    }}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="form-row-2">
+              <div>
+                <label className="flabel">Opens</label>
+                <select className="field" value={startHour} onChange={(e) => setStartHour(Number(e.target.value))}>
+                  {Array.from({ length: 24 }, (_, h) => (
+                    <option key={h} value={h}>{hourLabel(h)}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="flabel">Closes</label>
+                <select className="field" value={endHour} onChange={(e) => setEndHour(Number(e.target.value))}>
+                  {Array.from({ length: 24 }, (_, h) => h + 1).map((h) => (
+                    <option key={h} value={h}>{hourLabel(h % 24)}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {updateSettings.error && (
+              <p style={{ fontSize: 13, color: "#B0492A" }}>{updateSettings.error.message}</p>
+            )}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                className="btn btn-primary"
+                style={{ fontSize: 14 }}
+                disabled={updateSettings.isPending || days.length === 0 || endHour <= startHour}
+                onClick={() => updateSettings.mutate({ days, startHour, endHour, timezone: s.timezone })}
+              >
+                {updateSettings.isPending ? "Saving…" : "Save Window"}
+              </button>
+              <button className="btn btn-ghost" style={{ fontSize: 14 }} onClick={() => setEditing(false)}>Cancel</button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Today's check-ins */}
+      <div>
+        <h3 style={{ fontSize: 15, fontWeight: 800, marginBottom: 10 }}>
+          Checked In Today ({todayList?.length ?? 0})
+        </h3>
+        {!todayList || todayList.length === 0 ? (
+          <div className="card" style={{ padding: "24px 20px", textAlign: "center", color: "var(--muted)", fontSize: 14 }}>
+            No check-ins yet today.
+          </div>
+        ) : (
+          <div className="card" style={{ overflow: "hidden" }}>
+            {todayList.map((ci, i) => (
+              <div key={ci.id} style={{
+                display: "flex", alignItems: "center", gap: 12, padding: "12px 18px",
+                borderBottom: i < todayList.length - 1 ? "1px solid var(--border)" : "none",
+              }}>
+                <span style={{ fontSize: 15 }}>✅</span>
+                <span style={{ fontWeight: 700, fontSize: 14.5, flex: 1 }}>{ci.displayName}</span>
+                <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
+                  {new Date(ci.createdAt).toLocaleTimeString("en", { hour: "numeric", minute: "2-digit" })}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

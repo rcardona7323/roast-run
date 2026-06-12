@@ -7,8 +7,10 @@ import { organizationsRouter } from "./organizations.js";
 import { dashboardRouter } from "./dashboard.js";
 import { leaderboardRouter } from "./leaderboard.js";
 import { emailRouter } from "./email.js";
+import { checkinsRouter } from "./checkins.js";
 
 export const appRouter = router({
+  checkins: checkinsRouter,
   members: membersRouter,
   runs: runsRouter,
   rewards: rewardsRouter,

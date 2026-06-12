@@ -150,3 +150,18 @@ export const insertRedemptionSchema = createInsertSchema(redemptionsTable).omit(
 });
 export type InsertRedemption = z.infer<typeof insertRedemptionSchema>;
 export type Redemption = typeof redemptionsTable.$inferSelect;
+
+// ── Check-ins (QR attendance at run club) ───────────────────────────────
+export const checkInsTable = pgTable("check_ins", {
+  id: serial("id").primaryKey(),
+  memberId: integer("member_id")
+    .notNull()
+    .references(() => membersTable.id, { onDelete: "cascade" }),
+  organizationId: text("organization_id")
+    .notNull()
+    .references(() => organizationsTable.id, { onDelete: "cascade" }),
+  date: date("date").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type CheckIn = typeof checkInsTable.$inferSelect;
