@@ -69,9 +69,12 @@ export const dashboardRouter = router({
         .filter((t) => t.milesRequired > member.totalMiles)
         .sort((a, b) => a.milesRequired - b.milesRequired)[0] ?? null;
 
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    const weekStr = oneWeekAgo.toISOString().slice(0, 10);
+    // Miles since the start of the current calendar week (Sunday),
+    // matching the leaderboard's weekly view.
+    const sunday = new Date();
+    sunday.setHours(0, 0, 0, 0);
+    sunday.setDate(sunday.getDate() - sunday.getDay());
+    const weekStr = sunday.toISOString().slice(0, 10);
 
     const [weekResult] = await db
       .select({ total: sql<number>`coalesce(sum(${runsTable.distanceMiles}), 0)` })
