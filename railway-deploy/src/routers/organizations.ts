@@ -8,12 +8,54 @@ import { nanoid } from "nanoid";
 export const organizationsRouter = router({
   // List orgs the current user belongs to (no orgId needed)
   mine: authedProcedure.query(async ({ ctx }) => {
-    const rows = await db
-      .select({ org: organizationsTable })
-      .from(membersTable)
-      .innerJoin(organizationsTable, eq(membersTable.organizationId, organizationsTable.id))
-      .where(eq(membersTable.userId, ctx.userId));
-    return rows.map((r) => r.org);
+    const belongs = async () =>
+      (
+        await db
+          .select({ org: organizationsTable })
+          .from(membersTable)
+          .innerJoin(organizationsTable, eq(membersTable.organizationId, organizationsTable.id))
+          .where(eq(membersTable.userId, ctx.userId))
+      ).map((r) => r.org);
+
+    let orgs = await belongs();
+    if (orgs.length > 0) return orgs;
+
+    // Not a member of anything yet. First, try to claim an account-less
+    // member record with a matching email (admin-entered members keep their
+    // mileage when they sign up, even via plain login rather than the invite).
+    if (ctx.userEmail) {
+      const [claimable] = await db
+        .select()
+        .from(membersTable)
+        .where(
+          and(
+            isNull(membersTable.userId),
+            isNull(membersTable.parentMemberId),
+            sql`lower(${membersTable.email}) = ${ctx.userEmail.toLowerCase()}`
+          )
+        )
+        .limit(1);
+      if (claimable) {
+        await db.update(membersTable).set({ userId: ctx.userId }).where(eq(membersTable.id, claimable.id));
+        return belongs();
+      }
+    }
+
+    // No match. If this deployment has exactly one club, auto-join it so a
+    // plain signup lands in the club instead of the "create a club" screen.
+    const allOrgs = await db.select().from(organizationsTable);
+    if (allOrgs.length === 1) {
+      await db.insert(membersTable).values({
+        userId: ctx.userId,
+        organizationId: allOrgs[0].id,
+        displayName: ctx.userName ?? ctx.userEmail ?? "New Member",
+        email: ctx.userEmail ?? null,
+        isAdmin: false,
+      });
+      return belongs();
+    }
+
+    return orgs;
   }),
 
   get: protectedProcedure.query(async ({ ctx }) => {

@@ -10,6 +10,7 @@ export type Context = {
   res: Response;
   userId: string | null;
   userEmail: string | null;
+  userName: string | null;
   organizationId: string | null;
 };
 
@@ -28,6 +29,7 @@ export async function createContext({
     res,
     userId: session?.user.id ?? null,
     userEmail: session?.user.email ?? null,
+    userName: session?.user.name ?? null,
     organizationId,
   };
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "../lib/trpc";
 import { signOut } from "../lib/auth";
 
@@ -19,6 +19,14 @@ export default function OnboardingPage({ onSelectOrg }: Props) {
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+
+  // If the member already belongs to exactly one club, go straight in —
+  // don't make them pick from a list of one or see the create screen.
+  useEffect(() => {
+    if (!showCreate && existingOrgs && existingOrgs.length === 1) {
+      onSelectOrg(existingOrgs[0].id);
+    }
+  }, [existingOrgs, showCreate, onSelectOrg]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
